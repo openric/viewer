@@ -24,7 +24,10 @@ export function fromSubgraph(response) {
  * @returns {Promise<{nodes: Array, edges: Array}>}
  */
 export async function fetchSubgraph(serverBase, rootUri, depth = 2) {
-  const url = new URL(`${serverBase.replace(/\/$/, '')}/graph`);
+  // Accept absolute ("https://…") or same-origin-relative ("/api/static-ric") server bases.
+  const path = `${serverBase.replace(/\/$/, '')}/graph`;
+  const base = (typeof window !== 'undefined' && window.location) ? window.location.origin : undefined;
+  const url = /^https?:\/\//i.test(path) ? new URL(path) : new URL(path, base);
   url.searchParams.set('uri', rootUri);
   url.searchParams.set('depth', String(depth));
   const response = await fetch(url.toString(), {
