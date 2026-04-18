@@ -65,7 +65,14 @@
     </label>
     <input id="customUrl" placeholder="https://your-server/api/ric/v1" style="display:none; width: 18rem;" />
     <label>Start
-      <input id="start" value="/records/records" style="width: 14rem;" />
+      <input id="start" value="/informationobject/egyptian-boat" list="start-examples" style="width: 20rem;" />
+      <datalist id="start-examples">
+        <option value="/informationobject/egyptian-boat">Egyptian Boat — RecordSet with subjects</option>
+        <option value="/informationobject/cat-in-arms">Cat in Arms — multilingual Record</option>
+        <option value="/actor/binneman-family">Binneman Family — Agent w/ creator events</option>
+        <option value="/actor/mobrey-family">Mobrey Family — Agent</option>
+        <option value="/place/912150">Egypt — Place</option>
+      </datalist>
     </label>
     <label>Mode
       <select id="mode">
