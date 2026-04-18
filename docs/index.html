@@ -139,13 +139,18 @@
 
     async function load() {
       if (handle) { try { handle.unmount(); } catch {} }
+      const startValue = startInput.value.trim();
+      if (!startValue) {
+        viewerEl.innerHTML = `<div class="error-panel">Enter a Start URI (e.g. <code>/informationobject/egyptian-boat</code>) then click Load.<br><small>The dropdown on the Start input lists five curated examples.</small></div>`;
+        return;
+      }
       try {
         if (serverSel.value === 'static') {
           await ensureServiceWorker();
         }
         handle = mount(viewerEl, {
           server: currentServer(),
-          start: startInput.value,
+          start: startValue,
           mode: modeSel.value,
           depth: 2,
           onNodeClick: (node) => {
