@@ -33,9 +33,23 @@
     }
     header button { cursor: pointer; background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
     header button:hover { background: #2563eb; }
-    #viewer { width: 100vw; height: calc(100vh - 58px); }
+    #viewer { width: 100vw; height: calc(100vh - 58px); position: relative; }
     .hint { color: var(--muted); font-size: 0.8rem; margin-left: auto; }
     .error-panel { padding: 1rem; color: #fca5a5; font-family: monospace; }
+    .node-tooltip {
+      position: fixed; pointer-events: none; z-index: 100;
+      background: rgba(15, 23, 42, 0.97); color: var(--fg);
+      border: 1px solid #334155; border-radius: 6px;
+      padding: 0.55rem 0.75rem; font-size: 0.82rem; line-height: 1.4;
+      max-width: 360px; box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+      display: none;
+    }
+    .node-tooltip .tt-label { font-weight: 600; font-size: 0.92rem; margin-bottom: 0.25rem; word-break: break-word; }
+    .node-tooltip .tt-type { display: inline-block; padding: 0.05rem 0.45rem; border-radius: 999px; font-size: 0.7rem; margin-bottom: 0.4rem; }
+    .node-tooltip dl { margin: 0.3rem 0 0 0; display: grid; grid-template-columns: auto 1fr; gap: 0.15rem 0.6rem; }
+    .node-tooltip dt { color: var(--muted); font-size: 0.72rem; }
+    .node-tooltip dd { margin: 0; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.72rem; word-break: break-all; }
+    .node-tooltip .tt-hint { margin-top: 0.45rem; color: var(--muted); font-size: 0.72rem; font-style: italic; }
     .disclaimer {
       background: #1f2937; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
       color: var(--muted); font-size: 0.78rem; padding: 0.5rem 1rem; line-height: 1.5;
@@ -91,17 +105,18 @@
     Heratio currently runs the OpenRiC API as an <em>internal module</em>, not as a separate service the rest of Heratio consumes over HTTP. RiC data is already stored in its own dedicated tables (<code>ric_place</code>, <code>ric_rule</code>, <code>ric_activity</code>, <code>ric_instantiation</code>, <code>ric_relation_meta</code>), so the <em>data boundary</em> is clean — full client-server split of Heratio into "RiC API service" + "Heratio GLAM client" is on the roadmap. The API surface exercised by this demo is the same one an external client would use.
   </div>
   <div id="viewer"></div>
+  <div class="node-tooltip" id="node-tooltip" role="tooltip"></div>
 
   <script>
-    const { mount } = window.OpenricViewer;
+    const { fetchSubgraph, init2D, init3D, getColour } = window.OpenricViewer;
     const viewerEl = document.getElementById('viewer');
+    const tooltipEl = document.getElementById('node-tooltip');
     const serverSel = document.getElementById('server');
     const customUrl = document.getElementById('customUrl');
     const startInput = document.getElementById('start');
     const modeSel = document.getElementById('mode');
     const goBtn = document.getElementById('go');
 
-    let handle = null;
     let swReady = null;
 
     function ensureServiceWorker() {
@@ -154,36 +169,139 @@
       return serverSel.value;
     }
 
+    // Track the last-received subgraph so the hover tooltip can look up any
+    // field the server returned alongside the basic label/type (dates,
+    // identifier, atomUrl, description, etc.).
+    let lastGraph = { nodes: [], edges: [] };
+    let currentInstance = null;
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function renderTooltipHtml(node) {
+      if (!node) return '';
+      // Pick up both the canonical fields and any extra keys the server emits.
+      const known = new Set(['id', 'label', 'name', 'type', 'color', 'colour', 'val', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'fx', 'fy', 'fz', 'index', '__indexColor', '__threeObj', '__lineObj']);
+      const colour = getColour(node.type);
+      const extras = [];
+      for (const [k, v] of Object.entries(node)) {
+        if (known.has(k)) continue;
+        if (v == null || v === '') continue;
+        if (typeof v === 'object') continue; // skip nested objects
+        extras.push({ k, v });
+      }
+      const atomLink = node.atomUrl
+        ? `<div style="margin-top:0.35rem;"><a href="https://heratio.theahg.co.za${escapeHtml(node.atomUrl)}" target="_blank" rel="noopener" style="color:#60a5fa;">Open source record ↗</a></div>`
+        : '';
+      const extraDl = extras.length
+        ? `<dl>${extras.map(e => `<dt>${escapeHtml(e.k)}</dt><dd>${escapeHtml(e.v)}</dd>`).join('')}</dl>`
+        : '';
+      return `
+        <div class="tt-label">${escapeHtml(node.label || node.name || 'Unknown')}</div>
+        <span class="tt-type" style="background:${colour};color:#fff;">${escapeHtml(node.type || 'Unknown')}</span>
+        <dl><dt>id</dt><dd>${escapeHtml(node.id)}</dd></dl>
+        ${extraDl}
+        ${atomLink}
+        <div class="tt-hint">Click to drill into this node's subgraph</div>
+      `;
+    }
+
+    function showTooltipAt(clientX, clientY, node) {
+      tooltipEl.innerHTML = renderTooltipHtml(node);
+      tooltipEl.style.display = 'block';
+      // Nudge into viewport
+      const pad = 14;
+      const w = tooltipEl.offsetWidth;
+      const h = tooltipEl.offsetHeight;
+      let x = clientX + pad;
+      let y = clientY + pad;
+      if (x + w > window.innerWidth - 10) x = clientX - w - pad;
+      if (y + h > window.innerHeight - 10) y = clientY - h - pad;
+      tooltipEl.style.left = Math.max(4, x) + 'px';
+      tooltipEl.style.top = Math.max(4, y) + 'px';
+    }
+
+    function hideTooltip() {
+      tooltipEl.style.display = 'none';
+    }
+
+    function handleNodeClick(node) {
+      if (!node || !node.id) return;
+      let path = node.id;
+      try { if (path.startsWith('http')) path = new URL(path).pathname; } catch {}
+      startInput.value = path;
+      hideTooltip();
+      load();
+    }
+
+    function attachHoverForCy(cy) {
+      cy.on('mouseover', 'node', (evt) => {
+        const id = evt.target.data('id');
+        // Pull the rich original node from lastGraph — cy stores only the fields it needs.
+        const original = lastGraph.nodes.find(n => n.id === id) || evt.target.data();
+        const pos = evt.renderedPosition || { x: 0, y: 0 };
+        const rect = viewerEl.getBoundingClientRect();
+        showTooltipAt(rect.left + pos.x, rect.top + pos.y, original);
+      });
+      cy.on('mousemove', 'node', (evt) => {
+        if (tooltipEl.style.display !== 'block') return;
+        const rect = viewerEl.getBoundingClientRect();
+        const pos = evt.renderedPosition || { x: 0, y: 0 };
+        showTooltipAt(rect.left + pos.x, rect.top + pos.y, JSON.parse(tooltipEl.dataset.node || '{}'));
+      });
+      cy.on('mouseout', 'node', hideTooltip);
+    }
+
+    function attachHoverForForceGraph(fg) {
+      fg.onNodeHover((node) => {
+        if (!node) { hideTooltip(); return; }
+        const original = lastGraph.nodes.find(n => n.id === node.id) || node;
+        // ForceGraph3D doesn't give us screen coords — centre the tooltip near the mouse
+        // by tracking mousemove on the container.
+        showTooltipAt(lastMouse.x, lastMouse.y, original);
+      });
+    }
+
+    const lastMouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    window.addEventListener('mousemove', (e) => {
+      lastMouse.x = e.clientX;
+      lastMouse.y = e.clientY;
+    });
+
     async function load() {
-      if (handle) { try { handle.unmount(); } catch {} }
+      currentInstance = null;
       const startValue = startInput.value.trim();
       if (!startValue) {
         viewerEl.innerHTML = `<div class="error-panel">Enter a Start URI (e.g. <code>/informationobject/egyptian-boat</code>) then click Load.<br><small>The dropdown on the Start input lists five curated examples.</small></div>`;
         return;
       }
+      hideTooltip();
       try {
         if (serverSel.value === 'static') {
           viewerEl.innerHTML = `<div class="error-panel" style="color:#9ca3af;">Registering service worker for static-fixture backend…</div>`;
           await ensureServiceWorker();
         }
-        handle = mount(viewerEl, {
-          server: currentServer(),
-          start: startValue,
-          mode: modeSel.value,
-          depth: 2,
-          onNodeClick: (node) => {
-            if (!node || !node.id) return;
-            let path = node.id;
-            try { if (path.startsWith('http')) path = new URL(path).pathname; } catch {}
-            startInput.value = path;
-            // Guard against drill-down failures — surface the error without blanking the page.
-            Promise.resolve(handle.setRoot(path)).catch((e) => {
-              viewerEl.innerHTML = `<div class="error-panel">Drill-down failed for <code>${path}</code>: ${e.message || e}.<br><small>Hit <strong>Load</strong> above to reset.</small></div>`;
-            });
-          },
-        });
+        viewerEl.innerHTML = '';
+
+        const graph = await fetchSubgraph(currentServer(), startValue, 2);
+        lastGraph = graph;
+
+        const opts = { onNodeClick: handleNodeClick };
+        if (modeSel.value === '3d') {
+          currentInstance = init3D(viewerEl, graph, opts);
+          if (currentInstance) attachHoverForForceGraph(currentInstance);
+        } else {
+          currentInstance = init2D(viewerEl, graph, opts);
+          if (currentInstance) attachHoverForCy(currentInstance);
+        }
+        if (!currentInstance) {
+          viewerEl.innerHTML = `<div class="error-panel">Viewer failed to initialise — check the browser console for details.</div>`;
+        }
       } catch (e) {
-        viewerEl.innerHTML = `<div class="error-panel">Failed to load viewer: ${e.message}</div>`;
+        viewerEl.innerHTML = `<div class="error-panel">Failed to load OpenRiC graph: ${escapeHtml(e.message || e)}</div>`;
       }
     }
 
