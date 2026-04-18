@@ -6,12 +6,18 @@
 
 import { getColour } from './colours.js';
 import { fromSubgraph } from './adapt-subgraph.js';
+import { resolveTooltip } from './tooltip.js';
 
 /**
  * Initialise a 3D ForceGraph3D viewer.
  *
  * Requires `3d-force-graph` and `three-spritetext` resolvable via
  * `options.ForceGraph3D` / `options.SpriteText` or on `window`.
+ *
+ * Options:
+ *   onNodeClick(node)       — click handler, called with node data
+ *   onNodeHover(node)       — optional hover handler, in addition to tooltip
+ *   tooltip                 — true|false|{render: fn}. Default: true.
  */
 export function init3D(container, graphData, options = {}) {
   const { nodes, edges } = fromSubgraph(graphData);
@@ -86,6 +92,27 @@ export function init3D(container, graphData, options = {}) {
         );
       });
     }
+
+    // Hover tooltip (v0.2.0). Looks up the originating node from the raw
+    // subgraph to render richer context than ForceGraph3D's view of the node.
+    const nodeById = new Map(nodes.map(n => [n.id, n]));
+    const tooltip = resolveTooltip(options.tooltip);
+    if (tooltip) {
+      let lastMouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+      const track = (e) => { lastMouse = { x: e.clientX, y: e.clientY }; };
+      window.addEventListener('mousemove', track);
+
+      graph.onNodeHover((node) => {
+        if (node) {
+          tooltip.show(lastMouse.x, lastMouse.y, nodeById.get(node.id) || node);
+          if (typeof options.onNodeHover === 'function') options.onNodeHover(node);
+        } else {
+          tooltip.hide();
+          if (typeof options.onNodeHover === 'function') options.onNodeHover(null);
+        }
+      });
+    }
+
     return graph;
   } catch (e) {
     console.error('[openric-viewer] 3D init error:', e);

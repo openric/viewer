@@ -6,12 +6,18 @@
 
 import { getColour } from './colours.js';
 import { fromSubgraph } from './adapt-subgraph.js';
+import { resolveTooltip } from './tooltip.js';
 
 /**
  * Initialise a 2D Cytoscape graph.
  *
  * Requires `cytoscape` to be resolvable — either as an ES import
  * (passed via `options.cytoscape`) or present on `window.cytoscape`.
+ *
+ * Options:
+ *   onNodeClick(data)       — click handler, called with node data
+ *   onNodeHover(data|null)  — optional hover handler, in addition to tooltip
+ *   tooltip                 — true|false|{render: fn}. Default: true.
  */
 export function init2D(container, graphData, options = {}) {
   const { nodes, edges } = fromSubgraph(graphData);
@@ -100,6 +106,35 @@ export function init2D(container, graphData, options = {}) {
     if (typeof options.onNodeClick === 'function') {
       instance.on('tap', 'node', (evt) => options.onNodeClick(evt.target.data()));
     }
+
+    // Hover tooltip (v0.2.0). Render from the raw subgraph node so we keep
+    // the untruncated label + any extras the API returned.
+    const nodeById = new Map(nodes.map(n => [n.id, n]));
+    const tooltip = resolveTooltip(options.tooltip);
+    if (tooltip) {
+      let lastMouse = { x: 0, y: 0 };
+      const track = (e) => { lastMouse = { x: e.clientX, y: e.clientY }; };
+      window.addEventListener('mousemove', track);
+
+      instance.on('mouseover', 'node', (evt) => {
+        const id = evt.target.data('id');
+        const src = nodeById.get(id) || evt.target.data();
+        tooltip.show(lastMouse.x, lastMouse.y, src);
+        if (typeof options.onNodeHover === 'function') options.onNodeHover(src);
+      });
+      instance.on('mouseout', 'node', () => {
+        tooltip.hide();
+        if (typeof options.onNodeHover === 'function') options.onNodeHover(null);
+      });
+
+      const origDestroy = instance.destroy.bind(instance);
+      instance.destroy = () => {
+        window.removeEventListener('mousemove', track);
+        tooltip.hide();
+        return origDestroy();
+      };
+    }
+
     return instance;
   } catch (e) {
     console.error('[openric-viewer] 2D init error:', e);
