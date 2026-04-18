@@ -53,6 +53,7 @@
     <label>Server
       <select id="server">
         <option value="https://heratio.theahg.co.za/api/ric/v1">Heratio (reference)</option>
+        <option value="/api/static-ric">Static fixtures (no server — portability proof)</option>
         <option value="custom">Custom URL…</option>
       </select>
     </label>
@@ -84,18 +85,45 @@
     const goBtn = document.getElementById('go');
 
     let handle = null;
+    let swReady = null;
+
+    function ensureServiceWorker() {
+      if (swReady) return swReady;
+      if (!('serviceWorker' in navigator)) {
+        return Promise.reject(new Error('Service workers are not supported in this browser — static-fixture backend needs them.'));
+      }
+      swReady = navigator.serviceWorker.register('/sw.js').then(async (reg) => {
+        if (reg.installing) {
+          await new Promise((r) => reg.installing.addEventListener('statechange', function onc() {
+            if (this.state === 'activated') r();
+          }));
+        }
+        if (!navigator.serviceWorker.controller) {
+          await new Promise((r) => navigator.serviceWorker.addEventListener('controllerchange', r, { once: true }));
+        }
+        return reg;
+      });
+      return swReady;
+    }
 
     serverSel.addEventListener('change', () => {
       customUrl.style.display = serverSel.value === 'custom' ? '' : 'none';
+      if (serverSel.value === '/api/static-ric') {
+        // Start from the Egyptian Boat subgraph root — the URI inside the fixture.
+        startInput.value = '/default/recordset/905228';
+      }
     });
 
     function currentServer() {
       return serverSel.value === 'custom' ? customUrl.value.trim() : serverSel.value;
     }
 
-    function load() {
+    async function load() {
       if (handle) { try { handle.unmount(); } catch {} }
       try {
+        if (serverSel.value === '/api/static-ric') {
+          await ensureServiceWorker();
+        }
         handle = mount(viewerEl, {
           server: currentServer(),
           start: startInput.value,

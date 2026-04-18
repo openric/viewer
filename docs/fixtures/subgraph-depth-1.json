@@ -1,0 +1,280 @@
+{
+  "@context": {
+    "rico": "https://www.ica.org/standards/RiC/ontology#",
+    "openric": "https://openric.org/ns/v1#"
+  },
+  "@type": "openric:Subgraph",
+  "openric:root": "https://heratio.theahg.co.za/default/recordset/905228",
+  "openric:depth": 1,
+  "openric:nodes": [
+    {
+      "id": "https://heratio.theahg.co.za/default/recordset/905228",
+      "label": "Egyptian Boat",
+      "type": "RecordSet",
+      "atomId": 905228,
+      "atomUrl": "/egyptian-boat"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/term/905229",
+      "label": "Model boat",
+      "type": "Thing",
+      "atomId": 905229,
+      "atomUrl": "/model-boat"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/term/905230",
+      "label": "Funeral barge",
+      "type": "Thing",
+      "atomId": 905230,
+      "atomUrl": "/funeral-barge"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/term/905231",
+      "label": "Egyptian",
+      "type": "Thing",
+      "atomId": 905231,
+      "atomUrl": "/egyptian"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/term/905232",
+      "label": "12th Dynasty",
+      "type": "Thing",
+      "atomId": 905232,
+      "atomUrl": "/12th-dynasty"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/term/905233",
+      "label": "Wood",
+      "type": "Thing",
+      "atomId": 905233,
+      "atomUrl": "/wood-1"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/term/902996",
+      "label": "Africa",
+      "type": "Place",
+      "atomId": 902996,
+      "atomUrl": "/africa"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/term/903006",
+      "label": "Egypt",
+      "type": "Place",
+      "atomId": 903006,
+      "atomUrl": "/egypt"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/corporatebody/905206",
+      "label": "The British Museum UPDATED",
+      "type": "CorporateBody",
+      "atomId": 905206,
+      "atomUrl": "/the-british-museum"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/activity/910860",
+      "label": "Creation",
+      "type": "Activity",
+      "atomId": 910860,
+      "atomUrl": "/ric-activity-from-event-905243"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/activity/912152",
+      "label": "Production of funeral boat model",
+      "type": "Activity",
+      "atomId": 912152,
+      "atomUrl": "/ric-activity-egyptian-boat-production"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/activity/912153",
+      "label": "3D Photogrammetry Digitisation",
+      "type": "Activity",
+      "atomId": 912153,
+      "atomUrl": "/ric-activity-egyptian-boat-digitisation"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/activity/912154",
+      "label": "Transfer to current repository",
+      "type": "Activity",
+      "atomId": 912154,
+      "atomUrl": "/ric-activity-egyptian-boat-custody"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/activity/912346",
+      "label": "Giza Pyramid",
+      "type": "Activity",
+      "atomId": 912346,
+      "atomUrl": "/giza-pyramid"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/activity/912348",
+      "label": "Giza Pyramid Organization",
+      "type": "Activity",
+      "atomId": 912348,
+      "atomUrl": "/giza-pyramid-organization"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/place/912150",
+      "label": "Egypt",
+      "type": "Place",
+      "atomId": 912150,
+      "atomUrl": "/ric-place-egypt"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/place/912151",
+      "label": "Thebes (Luxor)",
+      "type": "Place",
+      "atomId": 912151,
+      "atomUrl": "/ric-place-thebes"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/rule/912155",
+      "label": "Egyptian Antiquities Protection Law (Law 117/1983)",
+      "type": "Rule",
+      "atomId": 912155,
+      "atomUrl": "/ric-rule-egyptian-antiquities-law"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/rule/912350",
+      "label": "Giza protection ordenance",
+      "type": "Rule",
+      "atomId": 912350,
+      "atomUrl": "/giza-protection-ordenance"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/instantiation/912056",
+      "label": "egyptian_boat_from_ancient_lives.glb",
+      "type": "Instantiation",
+      "atomId": 912056,
+      "atomUrl": "/ric-instantiation-912056"
+    },
+    {
+      "id": "https://heratio.theahg.co.za/default/instantiation/912156",
+      "label": "Egyptian Boat 3D Model (glTF)",
+      "type": "Instantiation",
+      "atomId": 912156,
+      "atomUrl": "/ric-instantiation-egyptian-boat-3d"
+    }
+  ],
+  "openric:edges": [
+    {
+      "source": "https://heratio.theahg.co.za/default/recordset/905228",
+      "target": "https://heratio.theahg.co.za/default/term/905229",
+      "predicate": "rico:hasOrHadSubject",
+      "label": "about"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/recordset/905228",
+      "target": "https://heratio.theahg.co.za/default/term/905230",
+      "predicate": "rico:hasOrHadSubject",
+      "label": "about"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/recordset/905228",
+      "target": "https://heratio.theahg.co.za/default/term/905231",
+      "predicate": "rico:hasOrHadSubject",
+      "label": "about"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/recordset/905228",
+      "target": "https://heratio.theahg.co.za/default/term/905232",
+      "predicate": "rico:hasOrHadSubject",
+      "label": "about"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/recordset/905228",
+      "target": "https://heratio.theahg.co.za/default/term/905233",
+      "predicate": "rico:hasOrHadSubject",
+      "label": "about"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/recordset/905228",
+      "target": "https://heratio.theahg.co.za/default/term/902996",
+      "predicate": "rico:hasOrHadLocation",
+      "label": "about"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/recordset/905228",
+      "target": "https://heratio.theahg.co.za/default/term/903006",
+      "predicate": "rico:hasOrHadLocation",
+      "label": "about"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/recordset/905228",
+      "target": "https://heratio.theahg.co.za/default/corporatebody/905206",
+      "predicate": "rico:hasOrHadHolder",
+      "label": "has or had holder"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/activity/910860",
+      "target": "https://heratio.theahg.co.za/default/recordset/905228",
+      "predicate": "rico:resultsOrResultedIn",
+      "label": "results in"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/activity/912152",
+      "target": "https://heratio.theahg.co.za/default/recordset/905228",
+      "predicate": "rico:resultsOrResultedIn",
+      "label": "results in"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/activity/912153",
+      "target": "https://heratio.theahg.co.za/default/recordset/905228",
+      "predicate": "rico:resultsOrResultedIn",
+      "label": "results in"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/activity/912154",
+      "target": "https://heratio.theahg.co.za/default/recordset/905228",
+      "predicate": "rico:resultsOrResultedIn",
+      "label": "results in"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/activity/912346",
+      "target": "https://heratio.theahg.co.za/default/recordset/905228",
+      "predicate": "rico:resultsOrResultedIn",
+      "label": "results in"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/activity/912348",
+      "target": "https://heratio.theahg.co.za/default/recordset/905228",
+      "predicate": "rico:resultsOrResultedIn",
+      "label": "results in"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/recordset/905228",
+      "target": "https://heratio.theahg.co.za/default/place/912150",
+      "predicate": "rico:hasOrHadLocation",
+      "label": "has or had location"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/recordset/905228",
+      "target": "https://heratio.theahg.co.za/default/place/912151",
+      "predicate": "rico:hasOrHadLocation",
+      "label": "has or had location"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/recordset/905228",
+      "target": "https://heratio.theahg.co.za/default/rule/912155",
+      "predicate": "rico:isOrWasRegulatedBy",
+      "label": "is or was regulated by"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/recordset/905228",
+      "target": "https://heratio.theahg.co.za/default/rule/912350",
+      "predicate": "rico:isOrWasRegulatedBy",
+      "label": "is or was regulated by"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/recordset/905228",
+      "target": "https://heratio.theahg.co.za/default/instantiation/912056",
+      "predicate": "rico:hasInstantiation",
+      "label": "has instantiation"
+    },
+    {
+      "source": "https://heratio.theahg.co.za/default/recordset/905228",
+      "target": "https://heratio.theahg.co.za/default/instantiation/912156",
+      "predicate": "rico:hasInstantiation",
+      "label": "has instantiation"
+    }
+  ]
+}
