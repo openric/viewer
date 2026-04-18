@@ -90,7 +90,7 @@
     <h1><a href="https://openric.org">OpenRiC</a> · Viewer demo</h1>
     <label>Server
       <select id="server">
-        <option value="https://heratio.theahg.co.za/api/ric/v1">Heratio (reference)</option>
+        <option value="https://ric.theahg.co.za/api/ric/v1">Reference API (ric.theahg.co.za)</option>
         <option value="static">Static fixtures (no server — portability proof)</option>
         <option value="custom">Custom URL…</option>
       </select>
@@ -131,8 +131,8 @@
     </div>
   </div>
   <div class="disclaimer">
-    <strong>About the reference implementation.</strong>
-    Heratio currently runs the OpenRiC API as an <em>internal module</em>, not as a separate service the rest of Heratio consumes over HTTP. RiC data is already stored in its own dedicated tables (<code>ric_place</code>, <code>ric_rule</code>, <code>ric_activity</code>, <code>ric_instantiation</code>, <code>ric_relation_meta</code>), so the <em>data boundary</em> is clean — full client-server split of Heratio into "RiC API service" + "Heratio GLAM client" is on the roadmap. The API surface exercised by this demo is the same one an external client would use.
+    <strong>About the reference backend.</strong>
+    This demo fetches from <a href="https://ric.theahg.co.za/api/ric/v1/health"><code>ric.theahg.co.za/api/ric/v1</code></a> — a public, standalone Laravel service that implements the OpenRiC spec against a real archival database. The operational GLAM platform (<a href="https://heratio.theahg.co.za">Heratio</a>) is itself a consumer of this API — every mutating admin action in Heratio calls <code>/api/ric/v1/*</code> with an <code>X-API-Key</code>, same surface you're using here. No privileged shortcut.
   </div>
   <div id="viewer"></div>
   <div class="node-tooltip" id="node-tooltip" role="tooltip"></div>
