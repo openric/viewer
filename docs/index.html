@@ -33,6 +33,31 @@
     }
     header button { cursor: pointer; background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
     header button:hover { background: #2563eb; }
+    header button.secondary { background: #1f2937; border-color: #374151; color: var(--fg); font-weight: 500; }
+    header button.secondary:hover { background: #374151; }
+
+    /* Browse popover — shows server-fetched examples so the user doesn't have to know URIs */
+    .browse-wrap { position: relative; display: inline-block; }
+    .browse-popover {
+      display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 50;
+      background: #0f172a; border: 1px solid #334155; border-radius: 6px;
+      padding: 0.4rem; min-width: 340px; max-width: 480px; max-height: 420px; overflow: auto;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .browse-popover.open { display: block; }
+    .browse-popover h4 {
+      margin: 0.45rem 0.55rem 0.2rem; font-size: 0.72rem; font-weight: 600;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .browse-popover h4:first-child { margin-top: 0.1rem; }
+    .browse-popover .item {
+      display: block; padding: 0.35rem 0.6rem; border-radius: 4px; cursor: pointer;
+      color: var(--fg); font-size: 0.83rem; line-height: 1.3; text-decoration: none;
+    }
+    .browse-popover .item:hover { background: #1f2937; text-decoration: none; }
+    .browse-popover .item small { color: var(--muted); font-family: monospace; font-size: 0.72rem; display: block; margin-top: 0.1rem; }
+    .browse-popover .status { padding: 0.5rem 0.6rem; color: var(--muted); font-size: 0.8rem; }
+    .browse-popover .status.err { color: #fca5a5; }
     #viewer { width: 100vw; height: calc(100vh - 58px); position: relative; }
     .hint { color: var(--muted); font-size: 0.8rem; margin-left: auto; }
     .error-panel { padding: 1rem; color: #fca5a5; font-family: monospace; }
@@ -106,6 +131,10 @@
         <option value="/place/912150">Egypt — Place</option>
       </datalist>
     </label>
+    <div class="browse-wrap">
+      <button id="btn-browse" class="secondary" type="button" title="Browse real entities from the current server">Browse ▾</button>
+      <div id="browse-popover" class="browse-popover" role="listbox"></div>
+    </div>
     <label>Mode
       <select id="mode">
         <option value="2d">2D</option>
@@ -341,6 +370,92 @@
     }
 
     goBtn.addEventListener('click', load);
+
+    // --- Browse popover: fetches a sample of real entities from the current
+    // server so the user has clickable starting points without needing to
+    // know any URIs. Lazy-loaded on first open, cached until server changes.
+    const browseBtn = document.getElementById('btn-browse');
+    const browsePopover = document.getElementById('browse-popover');
+    let browseCache = null;      // { server, items: [{label, path, type}] }
+
+    async function fetchExamples(server) {
+      // API returns items under either `ric:items` or `openric:items` depending
+      // on the entity type. Accept both, plus local static-fixture shape.
+      const pick = (j) => j?.['openric:items'] || j?.['ric:items'] || j?.items || [];
+      const pathFromId = (atId) => {
+        // atId looks like "https://host/informationobject/slug" → "/informationobject/slug"
+        try { return new URL(atId).pathname; } catch { return atId; }
+      };
+
+      const fetches = [
+        fetch(`${server}/records?limit=6`).then(r => r.json()).then(pick).then(items =>
+          items.map(i => ({ label: i['rico:title'] || i.title || 'Record', path: pathFromId(i['@id']), type: 'Record' }))),
+        fetch(`${server}/agents?limit=6`).then(r => r.json()).then(pick).then(items =>
+          items.map(i => ({ label: i['rico:name'] || i.name || 'Agent', path: pathFromId(i['@id']), type: 'Agent' }))),
+        fetch(`${server}/places?limit=4`).then(r => r.json()).then(pick).then(items =>
+          items.map(i => ({ label: i['rico:name'] || i.name || 'Place', path: pathFromId(i['@id']), type: 'Place' }))),
+        fetch(`${server}/activities?limit=3`).then(r => r.json()).then(pick).then(items =>
+          items.map(i => ({ label: i['rico:name'] || i.title || i.name || 'Activity', path: pathFromId(i['@id']), type: 'Activity' }))),
+        fetch(`${server}/rules?limit=3`).then(r => r.json()).then(pick).then(items =>
+          items.map(i => ({ label: i['rico:title'] || i.title || 'Rule', path: pathFromId(i['@id']), type: 'Rule' }))),
+      ];
+      const results = await Promise.allSettled(fetches);
+      return results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+    }
+
+    function renderBrowse(items) {
+      if (!items.length) {
+        browsePopover.innerHTML = '<div class="status err">No entities returned by this server.</div>';
+        return;
+      }
+      const groups = {};
+      for (const it of items) {
+        if (!it.path) continue;
+        (groups[it.type] = groups[it.type] || []).push(it);
+      }
+      let html = '';
+      for (const [type, list] of Object.entries(groups)) {
+        html += `<h4>${type} (${list.length})</h4>`;
+        for (const it of list) {
+          html += `<a class="item" data-path="${escapeHtml(it.path)}">${escapeHtml(it.label)}<small>${escapeHtml(it.path)}</small></a>`;
+        }
+      }
+      browsePopover.innerHTML = html;
+      browsePopover.querySelectorAll('.item').forEach(a => {
+        a.addEventListener('click', () => {
+          startInput.value = a.dataset.path;
+          browsePopover.classList.remove('open');
+          load();
+        });
+      });
+    }
+
+    async function openBrowse() {
+      const server = currentServer();
+      if (!server) { browsePopover.innerHTML = '<div class="status err">Configure a server first.</div>'; browsePopover.classList.add('open'); return; }
+      browsePopover.classList.add('open');
+      if (browseCache && browseCache.server === server) { renderBrowse(browseCache.items); return; }
+      browsePopover.innerHTML = '<div class="status">Loading sample entities…</div>';
+      try {
+        const items = await fetchExamples(server);
+        browseCache = { server, items };
+        renderBrowse(items);
+      } catch (e) {
+        browsePopover.innerHTML = `<div class="status err">Could not load: ${escapeHtml(e.message || e)}</div>`;
+      }
+    }
+
+    browseBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (browsePopover.classList.contains('open')) browsePopover.classList.remove('open');
+      else openBrowse();
+    });
+    document.addEventListener('click', (e) => {
+      if (!browsePopover.contains(e.target) && e.target !== browseBtn) browsePopover.classList.remove('open');
+    });
+    // Invalidate cache when server changes.
+    serverSel.addEventListener('change', () => { browseCache = null; });
+    customUrl.addEventListener('input', () => { browseCache = null; });
 
     // --- Help panel: default open on first visit, dismiss persisted in localStorage.
     const HELP_KEY = 'openric-viewer:help-dismissed';
