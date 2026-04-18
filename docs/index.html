@@ -209,10 +209,7 @@
       `;
     }
 
-    function showTooltipAt(clientX, clientY, node) {
-      tooltipEl.innerHTML = renderTooltipHtml(node);
-      tooltipEl.style.display = 'block';
-      // Nudge into viewport
+    function positionTooltip(clientX, clientY) {
       const pad = 14;
       const w = tooltipEl.offsetWidth;
       const h = tooltipEl.offsetHeight;
@@ -222,6 +219,12 @@
       if (y + h > window.innerHeight - 10) y = clientY - h - pad;
       tooltipEl.style.left = Math.max(4, x) + 'px';
       tooltipEl.style.top = Math.max(4, y) + 'px';
+    }
+
+    function showTooltipAt(clientX, clientY, node) {
+      tooltipEl.innerHTML = renderTooltipHtml(node);
+      tooltipEl.style.display = 'block';
+      positionTooltip(clientX, clientY);
     }
 
     function hideTooltip() {
@@ -242,15 +245,12 @@
         const id = evt.target.data('id');
         // Pull the rich original node from lastGraph — cy stores only the fields it needs.
         const original = lastGraph.nodes.find(n => n.id === id) || evt.target.data();
-        const pos = evt.renderedPosition || { x: 0, y: 0 };
-        const rect = viewerEl.getBoundingClientRect();
-        showTooltipAt(rect.left + pos.x, rect.top + pos.y, original);
+        showTooltipAt(lastMouse.x, lastMouse.y, original);
       });
-      cy.on('mousemove', 'node', (evt) => {
-        if (tooltipEl.style.display !== 'block') return;
-        const rect = viewerEl.getBoundingClientRect();
-        const pos = evt.renderedPosition || { x: 0, y: 0 };
-        showTooltipAt(rect.left + pos.x, rect.top + pos.y, JSON.parse(tooltipEl.dataset.node || '{}'));
+      cy.on('mousemove', 'node', () => {
+        // Tooltip stays put where mouseover placed it; if you want it to follow,
+        // uncomment the line below. (Follow-mouse causes flicker on dense graphs.)
+        // if (tooltipEl.style.display === 'block') positionTooltip(lastMouse.x, lastMouse.y);
       });
       cy.on('mouseout', 'node', hideTooltip);
     }
