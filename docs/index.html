@@ -199,10 +199,15 @@
       const extraDl = extras.length
         ? `<dl>${extras.map(e => `<dt>${escapeHtml(e.k)}</dt><dd>${escapeHtml(e.v)}</dd>`).join('')}</dl>`
         : '';
+      const shortType = node.type || 'Unknown';
+      const ricoType = /^rico:|:\/\//.test(shortType) ? shortType : `rico:${shortType}`;
       return `
         <div class="tt-label">${escapeHtml(node.label || node.name || 'Unknown')}</div>
-        <span class="tt-type" style="background:${colour};color:#fff;">${escapeHtml(node.type || 'Unknown')}</span>
-        <dl><dt>id</dt><dd>${escapeHtml(node.id)}</dd></dl>
+        <span class="tt-type" style="background:${colour};color:#fff;">${escapeHtml(shortType)}</span>
+        <dl>
+          <dt>RiC-O type</dt><dd>${escapeHtml(ricoType)}</dd>
+          <dt>id</dt><dd>${escapeHtml(node.id)}</dd>
+        </dl>
         ${extraDl}
         ${atomLink}
         <div class="tt-hint">Click to drill into this node's subgraph</div>
