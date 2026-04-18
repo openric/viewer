@@ -36,6 +36,12 @@
     #viewer { width: 100vw; height: calc(100vh - 58px); }
     .hint { color: var(--muted); font-size: 0.8rem; margin-left: auto; }
     .error-panel { padding: 1rem; color: #fca5a5; font-family: monospace; }
+    .disclaimer {
+      background: #1f2937; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      color: var(--muted); font-size: 0.78rem; padding: 0.5rem 1rem; line-height: 1.5;
+    }
+    .disclaimer strong { color: var(--fg); }
+    .disclaimer a { color: var(--accent); }
   </style>
 
   <!-- Peer deps from CDN (the @openric/viewer package declares these as peerDeps) -->
@@ -73,6 +79,10 @@
       <a href="https://github.com/openric/viewer">source</a>
     </span>
   </header>
+  <div class="disclaimer">
+    <strong>About the reference implementation.</strong>
+    Heratio currently runs the OpenRiC API as an <em>internal module</em>, not as a separate service the rest of Heratio consumes over HTTP. RiC data is already stored in its own dedicated tables (<code>ric_place</code>, <code>ric_rule</code>, <code>ric_activity</code>, <code>ric_instantiation</code>, <code>ric_relation_meta</code>), so the <em>data boundary</em> is clean — full client-server split of Heratio into "RiC API service" + "Heratio GLAM client" is on the roadmap. The API surface exercised by this demo is the same one an external client would use.
+  </div>
   <div id="viewer"></div>
 
   <script>
