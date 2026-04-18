@@ -22,11 +22,12 @@ const ROUTES = {
 };
 
 self.addEventListener('install', (event) => {
+  // Best-effort precache — never fail install if a fixture is temporarily 404.
   event.waitUntil(
     caches.open(CACHE_VERSION).then((cache) =>
-      cache.addAll([
-        '/fixtures/subgraph-depth-1.json',
-        '/fixtures/subgraph-depth-2.json',
+      Promise.allSettled([
+        cache.add('/fixtures/subgraph-depth-1.json'),
+        cache.add('/fixtures/subgraph-depth-2.json'),
       ]),
     ),
   );
@@ -62,21 +63,33 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.open(CACHE_VERSION).then((cache) =>
-      cache.match(fixturePath).then((hit) => {
-        const response = hit || fetch(fixturePath);
-        return Promise.resolve(response).then((r) => {
-          const body = r.clone();
-          return body.text().then((text) => new Response(text, {
-            status: 200,
-            headers: {
-              'Content-Type': 'application/ld+json',
-              'X-Openric-Backend': 'static-fixtures',
-            },
-          }));
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_VERSION);
+    let response = await cache.match(fixturePath);
+    if (!response) {
+      try {
+        response = await fetch(fixturePath);
+        if (response.ok) {
+          await cache.put(fixturePath, response.clone());
+        }
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'fixture_fetch_failed', fixture: fixturePath, reason: String(e) }), {
+          status: 502, headers: { 'Content-Type': 'application/json' },
         });
-      }),
-    ),
-  );
+      }
+    }
+    if (!response || !response.ok) {
+      return new Response(JSON.stringify({ error: 'fixture_not_available', fixture: fixturePath }), {
+        status: 502, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    const text = await response.text();
+    return new Response(text, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/ld+json',
+        'X-Openric-Backend': 'static-fixtures',
+      },
+    });
+  })());
 });
