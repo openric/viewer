@@ -56,6 +56,24 @@
     }
     .disclaimer strong { color: var(--fg); }
     .disclaimer a { color: var(--accent); }
+
+    .help-panel {
+      background: #0f172a; border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1rem; font-size: 0.8rem; color: var(--muted); line-height: 1.55;
+    }
+    .help-panel.hidden { display: none; }
+    .help-panel .help-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.4rem 1.5rem; max-width: 1200px; margin: 0 auto; }
+    .help-panel .help-item strong { color: var(--fg); }
+    .help-panel kbd {
+      background: #334155; color: var(--fg);
+      border: 1px solid #475569; border-bottom-width: 2px;
+      border-radius: 3px; padding: 0.05rem 0.35rem;
+      font-family: inherit; font-size: 0.75rem;
+    }
+    .help-panel .dismiss { float: right; background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.72rem; cursor: pointer; }
+    .help-panel .dismiss:hover { color: var(--fg); border-color: var(--fg); }
+    header .help-toggle { background: var(--panel-alt, #0f172a); color: var(--muted); border: 1px solid var(--border); padding: 0.25rem 0.55rem; border-radius: 4px; font-size: 0.8rem; cursor: pointer; }
+    header .help-toggle:hover { color: var(--fg); }
   </style>
 
   <!-- Peer deps from CDN (the @openric/viewer package declares these as peerDeps) -->
@@ -95,11 +113,23 @@
       </select>
     </label>
     <button id="go">Load</button>
+    <button id="btn-help" class="help-toggle" type="button" title="Show / hide usage help">? Help</button>
     <span class="hint">
       <a href="https://www.npmjs.com/package/@openric/viewer">npm</a> ·
       <a href="https://github.com/openric/viewer">source</a>
     </span>
   </header>
+  <div class="help-panel" id="help-panel">
+    <button class="dismiss" id="btn-help-dismiss" type="button">Dismiss</button>
+    <div class="help-grid">
+      <div class="help-item"><strong>Server</strong> — pick <em>Heratio</em> (live reference implementation), <em>Static fixtures</em> (service-worker replays the OpenRiC conformance pack — proves the viewer is implementation-neutral), or <em>Custom URL</em> for any third-party OpenRiC-conformant server.</div>
+      <div class="help-item"><strong>Start</strong> — path of the root entity to draw. The dropdown lists five curated examples; type any path and hit <kbd>Enter</kbd>. Shape: <code>/informationobject/&lt;slug&gt;</code>, <code>/actor/&lt;slug&gt;</code>, <code>/place/&lt;id&gt;</code>, <code>/default/recordset/&lt;id&gt;</code>, etc.</div>
+      <div class="help-item"><strong>Mode</strong> — <em>2D</em> (cytoscape force-directed, fast) or <em>3D</em> (WebGL-based, draggable camera). Switch any time and hit <kbd>Load</kbd>.</div>
+      <div class="help-item"><strong>Hover</strong> a node to see its full identifier, RiC-O type (<code>rico:*</code>), and every property the server returns. Hover an edge (if available) for its predicate.</div>
+      <div class="help-item"><strong>Click</strong> a node to drill into its subgraph — the Start field updates and the graph reloads around the new root.</div>
+      <div class="help-item"><strong>3D controls:</strong> left-drag to orbit, right-drag to pan, scroll to zoom. Click-to-drill also orbits the camera to the selected node.</div>
+    </div>
+  </div>
   <div class="disclaimer">
     <strong>About the reference implementation.</strong>
     Heratio currently runs the OpenRiC API as an <em>internal module</em>, not as a separate service the rest of Heratio consumes over HTTP. RiC data is already stored in its own dedicated tables (<code>ric_place</code>, <code>ric_rule</code>, <code>ric_activity</code>, <code>ric_instantiation</code>, <code>ric_relation_meta</code>), so the <em>data boundary</em> is clean — full client-server split of Heratio into "RiC API service" + "Heratio GLAM client" is on the roadmap. The API surface exercised by this demo is the same one an external client would use.
@@ -311,6 +341,22 @@
     }
 
     goBtn.addEventListener('click', load);
+
+    // --- Help panel: default open on first visit, dismiss persisted in localStorage.
+    const HELP_KEY = 'openric-viewer:help-dismissed';
+    const helpPanel = document.getElementById('help-panel');
+    const helpBtn = document.getElementById('btn-help');
+    const helpDismissBtn = document.getElementById('btn-help-dismiss');
+    if (localStorage.getItem(HELP_KEY) === '1') helpPanel.classList.add('hidden');
+    helpBtn.addEventListener('click', () => {
+      helpPanel.classList.toggle('hidden');
+      if (!helpPanel.classList.contains('hidden')) localStorage.removeItem(HELP_KEY);
+    });
+    helpDismissBtn.addEventListener('click', () => {
+      helpPanel.classList.add('hidden');
+      localStorage.setItem(HELP_KEY, '1');
+    });
+
     load();
   </script>
 </body>
