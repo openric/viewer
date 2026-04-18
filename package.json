@@ -1,0 +1,71 @@
+{
+  "name": "@openric/viewer",
+  "version": "0.1.0",
+  "description": "Standalone 2D/3D graph viewer for OpenRiC-conformant servers. Implementation-neutral — drives any server that implements the OpenRiC Viewing API.",
+  "keywords": [
+    "openric",
+    "ric",
+    "records-in-contexts",
+    "archival",
+    "json-ld",
+    "graph-viewer"
+  ],
+  "author": "Johan Pieterse <johan@plainsailingisystems.co.za>",
+  "license": "AGPL-3.0-or-later",
+  "homepage": "https://openric.org",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openric/viewer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/openric/viewer/issues"
+  },
+  "type": "module",
+  "main": "./dist/openric-viewer.umd.js",
+  "module": "./dist/openric-viewer.esm.js",
+  "browser": "./dist/openric-viewer.umd.js",
+  "unpkg": "./dist/openric-viewer.umd.js",
+  "jsdelivr": "./dist/openric-viewer.umd.js",
+  "exports": {
+    ".": {
+      "import": "./dist/openric-viewer.esm.js",
+      "require": "./dist/openric-viewer.umd.js",
+      "default": "./dist/openric-viewer.umd.js"
+    },
+    "./style.css": "./dist/openric-viewer.css"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node --test tests/",
+    "fixture-backend": "node demo/fixture-backend/server.js"
+  },
+  "peerDependencies": {
+    "3d-force-graph": "^1.73.0",
+    "cytoscape": "^3.28.0",
+    "three": "^0.160.0",
+    "three-spritetext": "^1.8.0"
+  },
+  "peerDependenciesMeta": {
+    "3d-force-graph": { "optional": true },
+    "three": { "optional": true },
+    "three-spritetext": { "optional": true }
+  },
+  "devDependencies": {
+    "3d-force-graph": "^1.73.3",
+    "cytoscape": "^3.28.1",
+    "three": "^0.160.1",
+    "three-spritetext": "^1.8.1",
+    "vite": "^5.2.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,93 @@
+<!--
+  Copyright (C) 2026 Johan Pieterse / Plain Sailing Information Systems
+  SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>@openric/viewer — demo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; background: #111827; color: #e5e7eb; }
+    header { padding: 0.75rem 1rem; background: #0f172a; border-bottom: 1px solid #1f2937; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    header h1 { margin: 0; font-size: 1rem; font-weight: 600; }
+    header select, header input, header button { background: #1f2937; color: #e5e7eb; border: 1px solid #374151; padding: 0.4rem 0.6rem; border-radius: 4px; font-size: 0.875rem; }
+    header button { cursor: pointer; }
+    #viewer { width: 100vw; height: calc(100vh - 60px); }
+    .hint { color: #9ca3af; font-size: 0.8rem; }
+  </style>
+
+  <!-- Peer libs loaded from CDN for the demo. In an npm consumer, these are
+       peer-deps and come via the bundler. -->
+  <script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+  <script src="https://unpkg.com/three@0.160.1/build/three.min.js"></script>
+  <script src="https://unpkg.com/three-spritetext@1.8.1/dist/three-spritetext.min.js"></script>
+  <script src="https://unpkg.com/3d-force-graph@1.73.3/dist/3d-force-graph.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>@openric/viewer</h1>
+    <label>Server
+      <select id="server">
+        <option value="https://heratio.theahg.co.za/api/ric/v1">Heratio (reference)</option>
+        <option value="http://localhost:5181">Static fixture server (local)</option>
+        <option value="custom">Custom URL…</option>
+      </select>
+    </label>
+    <input id="customUrl" placeholder="https://your-server/api/ric/v1" style="display:none; width: 16rem;" />
+    <label>Start
+      <input id="start" value="/records/records" style="width: 14rem;" />
+    </label>
+    <label>Mode
+      <select id="mode">
+        <option value="2d">2D</option>
+        <option value="3d">3D</option>
+      </select>
+    </label>
+    <button id="go">Load</button>
+    <span class="hint">Click a node to drill into its subgraph.</span>
+  </header>
+  <div id="viewer"></div>
+
+  <script type="module">
+    import { mount } from '/src/index.js';
+
+    const viewerEl = document.getElementById('viewer');
+    const serverSel = document.getElementById('server');
+    const customUrl = document.getElementById('customUrl');
+    const startInput = document.getElementById('start');
+    const modeSel = document.getElementById('mode');
+    const goBtn = document.getElementById('go');
+
+    let handle = null;
+
+    serverSel.addEventListener('change', () => {
+      customUrl.style.display = serverSel.value === 'custom' ? '' : 'none';
+    });
+
+    function currentServer() {
+      return serverSel.value === 'custom' ? customUrl.value.trim() : serverSel.value;
+    }
+
+    function load() {
+      if (handle) handle.unmount();
+      handle = mount(viewerEl, {
+        server: currentServer(),
+        start: startInput.value,
+        mode: modeSel.value,
+        depth: 2,
+        onNodeClick: (node) => {
+          if (node.id) {
+            startInput.value = node.id.startsWith('http') ? new URL(node.id).pathname : node.id;
+            handle.setRoot(startInput.value);
+          }
+        },
+      });
+    }
+
+    goBtn.addEventListener('click', load);
+    load();
+  </script>
+</body>
+</html>
