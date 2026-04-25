@@ -40,7 +40,7 @@ export function init2D(container, graphData, options = {}) {
         id: node.id,
         label: node.label ? String(node.label).substring(0, maxLabelLen) : 'Unknown',
         type: node.type,
-        colour: getColour(node.type),
+        colour: getColour(node), // pass whole node — dual-read across spec v0.37 boundary
         atomUrl: node.atomUrl || null,
       },
     });

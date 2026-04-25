@@ -38,7 +38,7 @@ export function init3D(container, graphData, options = {}) {
   const mappedNodes = nodes.map((n) => ({
     id: n.id,
     name: n.label || 'Unknown',
-    colour: getColour(n.type),
+    colour: getColour(n), // pass whole node — dual-read across spec v0.37 boundary
     val: 1,
     type: n.type,
     atomUrl: n.atomUrl || null,

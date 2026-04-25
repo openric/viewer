@@ -68,7 +68,7 @@ function ensureElement() {
 export function defaultRender(node) {
   if (!node) return '';
   const known = new Set(['id', 'label', 'name', 'type', 'color', 'colour', 'val', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'fx', 'fy', 'fz', 'index', '__indexColor', '__threeObj', '__lineObj']);
-  const colour = getColour(node.type);
+  const colour = getColour(node); // pass whole node — dual-read across spec v0.37 boundary
   const shortType = node.type || 'Unknown';
   const ricoType = /^rico:|:\/\//.test(shortType) ? shortType : `rico:${shortType}`;
   const extras = [];
