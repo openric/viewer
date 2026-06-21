@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "heratio-km": {
+      "command": "node",
+      "args": [
+        "/usr/share/nginx/openric-viewer/.claude/mcp-servers/heratio-km/index.js"
+      ],
+      "env": {
+        "KM_BASE_URL": "https://km.theahg.co.za",
+        "KM_TIMEOUT_MS": "180000",
+        "KM_API_KEY": "3862ff9d4a3ed6a7b719338455bb9daaaae41c06d6e26220ece35032cb1732e9"
+      }
+    },
+    "docx": {
+      "command": "node",
+      "args": [
+        "/usr/share/nginx/openric-viewer/.claude/mcp-servers/docx/index.js"
+      ]
+    }
+  }
+}
