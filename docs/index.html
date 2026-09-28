@@ -12,7 +12,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>OpenRiC Viewer — demo</title>
+  <title>OpenRiC Graph Explorer</title>
   <meta name="description" content="Live demo of @openric/viewer against OpenRiC-conformant servers." />
   <link rel="canonical" href="https://viewer.openric.org/" />
 
@@ -29,7 +29,15 @@
       --border: #1f2937; --accent: #3b82f6;
     }
     * { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--fg); }
+    /* Flex column rather than a hardcoded viewport subtraction. The graph used
+       calc(100vh - 58px), which assumed exactly one 58px header - now there is
+       a shared shell strip, a control bar, and an optional trail and legend
+       above it, so any fixed number would be wrong. */
+    body {
+      font-family: system-ui, -apple-system, sans-serif; margin: 0;
+      background: var(--bg); color: var(--fg);
+      min-height: 100vh; display: flex; flex-direction: column;
+    }
     header { padding: 0.75rem 1rem; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
     header h1 { margin: 0; font-size: 1rem; font-weight: 600; }
     header a { color: var(--accent); text-decoration: none; }
@@ -66,7 +74,7 @@
     .browse-popover .item small { color: var(--muted); font-family: monospace; font-size: 0.72rem; display: block; margin-top: 0.1rem; }
     .browse-popover .status { padding: 0.5rem 0.6rem; color: var(--muted); font-size: 0.8rem; }
     .browse-popover .status.err { color: #fca5a5; }
-    #viewer { width: 100vw; height: calc(100vh - 58px); position: relative; }
+    #viewer { width: 100%; flex: 1 1 auto; min-height: 420px; position: relative; }
     .hint { color: var(--muted); font-size: 0.8rem; margin-left: auto; }
     .error-panel { padding: 1rem; color: #fca5a5; font-family: monospace; }
     .node-tooltip {
@@ -83,6 +91,49 @@
     .node-tooltip dt { color: var(--muted); font-size: 0.72rem; }
     .node-tooltip dd { margin: 0; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.72rem; word-break: break-all; }
     .node-tooltip .tt-hint { margin-top: 0.45rem; color: var(--muted); font-size: 0.72rem; font-style: italic; }
+    /* Advanced drawer - closed by default. A server address is not what a
+       first-time visitor came for, and the graph already loads an example. */
+    .advanced { border-bottom: 1px solid var(--border); background: var(--panel); }
+    .advanced > summary {
+      cursor: pointer; padding: 0.5rem 1rem; font-size: 0.82rem; color: var(--muted);
+      list-style: none; user-select: none;
+    }
+    .advanced > summary::-webkit-details-marker { display: none; }
+    .advanced > summary::before { content: '▸ '; }
+    .advanced[open] > summary::before { content: '▾ '; }
+    .advanced > summary:hover { color: var(--fg); }
+    .advanced-inner { padding: 0 1rem 0.8rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    .advanced-inner label { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; color: var(--muted); }
+    .advanced-inner select, .advanced-inner input {
+      background: var(--bg); color: var(--fg); border: 1px solid var(--border);
+      border-radius: 4px; padding: 0.35rem 0.5rem; font-size: 0.85rem; font-family: inherit;
+    }
+
+    /* Where you have been. */
+    .trail {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem;
+      padding: 0.5rem 1rem; background: var(--panel); border-bottom: 1px solid var(--border);
+      font-size: 0.83rem;
+    }
+    .trail button {
+      background: none; border: none; color: var(--accent); cursor: pointer;
+      font: inherit; padding: 0.15rem 0.3rem; border-radius: 4px;
+    }
+    .trail button:hover { background: var(--border); text-decoration: underline; }
+    .trail .sep { color: var(--muted); }
+    .trail .current { color: var(--fg); font-weight: 600; padding: 0.15rem 0.3rem; }
+    .trail .clear { margin-left: auto; color: var(--muted); }
+
+    /* What the colours mean. Not colour-only: each swatch carries its label. */
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 0.35rem 0.9rem;
+      padding: 0.5rem 1rem; background: var(--panel); border-bottom: 1px solid var(--border);
+      font-size: 0.8rem; color: var(--muted);
+    }
+    .legend .item { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .legend .swatch { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+    .legend .formal { color: #6b7280; font-size: 0.92em; }
+
     .disclaimer {
       background: #1f2937; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
       color: var(--muted); font-size: 0.78rem; padding: 0.5rem 1rem; line-height: 1.5;
@@ -123,41 +174,58 @@
        openric.org/assets/shell/v1.js). What remains here is the control bar,
        which is this surface's own concern. -->
   <header>
-    <label>Server
-      <select id="server">
-        <option value="https://ric.theahg.co.za/api/ric/v1">Reference API (ric.theahg.co.za)</option>
-        <option value="static">Static fixtures (no server — portability proof)</option>
-        <option value="custom">Custom URL…</option>
-      </select>
-    </label>
-    <input id="customUrl" placeholder="https://your-server/api/ric/v1" style="display:none; width: 18rem;" />
-    <label>Start
-      <input id="start" value="/informationobject/egyptian-boat" list="start-examples" style="width: 20rem;" />
-      <datalist id="start-examples">
-        <option value="/informationobject/egyptian-boat">Egyptian Boat — RecordSet with subjects</option>
-        <option value="/informationobject/cat-in-arms">Cat in Arms — multilingual Record</option>
-        <option value="/actor/binneman-family">Binneman Family — Agent w/ creator events</option>
-        <option value="/actor/mobrey-family">Mobrey Family — Agent</option>
-        <option value="/place/912150">Egypt — Place</option>
-      </datalist>
-    </label>
     <div class="browse-wrap">
-      <button id="btn-browse" class="secondary" type="button" title="Browse real entities from the current server">Browse ▾</button>
+      <button id="btn-browse" class="secondary" type="button" title="Browse real entities from the current server">Browse entities ▾</button>
       <div id="browse-popover" class="browse-popover" role="listbox"></div>
     </div>
-    <label>Mode
+    <label>View
       <select id="mode">
         <option value="2d">2D</option>
-        <option value="3d">3D</option>
+        <option value="3d">3D (experimental)</option>
       </select>
     </label>
-    <button id="go">Load</button>
+    <button id="go">Reload</button>
     <button id="btn-help" class="help-toggle" type="button" title="Show / hide usage help">? Help</button>
     <span class="hint">
       <a href="https://www.npmjs.com/package/@openric/viewer">npm</a> ·
       <a href="https://github.com/openric/viewer">source</a>
     </span>
   </header>
+
+  <!-- Where you have been. A graph interface without a visible path back is
+       disorienting: you drill three nodes deep and cannot retrace. -->
+  <nav class="trail" id="trail" aria-label="Path through the graph" hidden></nav>
+
+  <!-- What the colours mean, in plain language, always visible. -->
+  <div class="legend" id="legend" hidden></div>
+
+  <!-- Server address and the raw entity path are the two things almost nobody
+       needs on a first visit. The graph loads a curated example on entry, so
+       these belong behind a drawer. <details> works without script and is
+       correct on touch. -->
+  <details class="advanced" id="advanced">
+    <summary>Advanced - connect another OpenRiC server</summary>
+    <div class="advanced-inner">
+      <label>Server
+        <select id="server">
+          <option value="https://ric.theahg.co.za/api/ric/v1">Reference API (ric.theahg.co.za)</option>
+          <option value="static">Static fixtures (no server - portability proof)</option>
+          <option value="custom">Custom URL…</option>
+        </select>
+      </label>
+      <input id="customUrl" placeholder="https://your-server/api/ric/v1" style="display:none; width: 18rem;" />
+      <label>Start path
+        <input id="start" value="/informationobject/egyptian-boat" list="start-examples" style="width: 20rem;" />
+        <datalist id="start-examples">
+          <option value="/informationobject/egyptian-boat">Egyptian Boat - RecordSet with subjects</option>
+          <option value="/informationobject/cat-in-arms">Cat in Arms - multilingual Record</option>
+          <option value="/actor/binneman-family">Binneman Family - Agent w/ creator events</option>
+          <option value="/actor/mobrey-family">Mobrey Family - Agent</option>
+          <option value="/place/912150">Egypt - Place</option>
+        </datalist>
+      </label>
+    </div>
+  </details>
   <div class="help-panel" id="help-panel">
     <button class="dismiss" id="btn-help-dismiss" type="button">Dismiss</button>
     <div class="help-grid">
@@ -305,13 +373,111 @@
       tooltipEl.style.display = 'none';
     }
 
+    // --- Path through the graph -------------------------------------------
+    // Drilling into a node replaces the whole graph, so without a trail you
+    // cannot retrace three hops. Each entry is {path, label}.
+    const trailEl = document.getElementById('trail');
+    let trail = [];
+
+    function labelForPath(path) {
+      const node = (lastGraph.nodes || []).find(n => {
+        let id = n.id || '';
+        try { if (id.startsWith('http')) id = new URL(id).pathname; } catch {}
+        return id === path;
+      });
+      return (node && (node.label || node.title)) || path.split('/').pop() || path;
+    }
+
+    function renderTrail() {
+      if (trail.length < 2) { trailEl.hidden = true; return; }
+      trailEl.hidden = false;
+      trailEl.innerHTML = '';
+      trail.forEach((entry, i) => {
+        if (i) {
+          const sep = document.createElement('span');
+          sep.className = 'sep';
+          sep.textContent = '→';
+          trailEl.appendChild(sep);
+        }
+        if (i === trail.length - 1) {
+          const cur = document.createElement('span');
+          cur.className = 'current';
+          cur.textContent = entry.label;
+          trailEl.appendChild(cur);
+        } else {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = entry.label;
+          btn.title = entry.path;
+          btn.addEventListener('click', () => {
+            trail = trail.slice(0, i + 1);   // going back truncates forward history
+            startInput.value = entry.path;
+            load({ keepTrail: true });
+          });
+          trailEl.appendChild(btn);
+        }
+      });
+      const clear = document.createElement('button');
+      clear.type = 'button';
+      clear.className = 'clear';
+      clear.textContent = 'Start over';
+      clear.addEventListener('click', () => {
+        trail = [];
+        startInput.value = '/informationobject/egyptian-boat';
+        load();
+      });
+      trailEl.appendChild(clear);
+    }
+
+    // --- Legend ------------------------------------------------------------
+    // Plain-language names first, the formal RiC class second. Every swatch
+    // carries its label, so the legend is never colour-only.
+    const legendEl = document.getElementById('legend');
+    const PLAIN_TYPE = {
+      RecordSet: 'Collection', Record: 'Record', RecordPart: 'Part of a record',
+      Person: 'Person', CorporateBody: 'Organisation', Family: 'Family',
+      Agent: 'Person or organisation', Activity: 'Activity', Place: 'Place',
+      Instantiation: 'Physical or digital copy', Rule: 'Rule or mandate',
+      Function: 'Function', Language: 'Language', Thing: 'Concept',
+    };
+
+    function renderLegend(graph) {
+      const seen = new Map();
+      for (const node of graph.nodes || []) {
+        const t = (node.type || '').split('#').pop().split('/').pop().split(':').pop();
+        if (t && !seen.has(t)) seen.set(t, getColour(node.type || t));
+      }
+      if (!seen.size) { legendEl.hidden = true; return; }
+      legendEl.hidden = false;
+      legendEl.innerHTML = '';
+      for (const [type, colour] of seen) {
+        const item = document.createElement('span');
+        item.className = 'item';
+        const sw = document.createElement('span');
+        sw.className = 'swatch';
+        sw.style.background = colour;
+        item.appendChild(sw);
+        item.appendChild(document.createTextNode(PLAIN_TYPE[type] || type));
+        if (PLAIN_TYPE[type] && PLAIN_TYPE[type] !== type) {
+          const formal = document.createElement('span');
+          formal.className = 'formal';
+          formal.textContent = '(' + type + ')';
+          item.appendChild(formal);
+        }
+        legendEl.appendChild(item);
+      }
+    }
+
     function handleNodeClick(node) {
       if (!node || !node.id) return;
       let path = node.id;
       try { if (path.startsWith('http')) path = new URL(path).pathname; } catch {}
+      const label = (node.label || node.title || path.split('/').pop() || path);
+      if (!trail.length) trail.push({ path: startInput.value.trim(), label: labelForPath(startInput.value.trim()) });
+      trail.push({ path, label });
       startInput.value = path;
       hideTooltip();
-      load();
+      load({ keepTrail: true });
     }
 
     function attachHoverForCy(cy) {
@@ -345,8 +511,11 @@
       lastMouse.y = e.clientY;
     });
 
-    async function load() {
+    async function load(opts = {}) {
       currentInstance = null;
+      // A load that did not come from drilling or from the trail is a fresh
+      // start - Reload, a server change, or picking from Browse.
+      if (!opts.keepTrail) trail = [];
       const startValue = startInput.value.trim();
       if (!startValue) {
         viewerEl.innerHTML = `<div class="error-panel">Enter a Start URI (e.g. <code>/informationobject/egyptian-boat</code>) then click Load.<br><small>The dropdown on the Start input lists five curated examples.</small></div>`;
@@ -362,6 +531,8 @@
 
         const graph = await fetchSubgraph(currentServer(), startValue, 2);
         lastGraph = graph;
+        renderLegend(graph);
+        renderTrail();
 
         const opts = { onNodeClick: handleNodeClick };
         if (modeSel.value === '3d') {
