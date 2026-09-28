@@ -15,6 +15,14 @@
   <title>OpenRiC Viewer — demo</title>
   <meta name="description" content="Live demo of @openric/viewer against OpenRiC-conformant servers." />
   <link rel="canonical" href="https://viewer.openric.org/" />
+
+  <!-- Shared OpenRiC shell: header, footer, canonical entity colours and
+       design tokens, served from openric.org so the four surfaces read as one
+       product without being one deployment. Progressive enhancement - if it
+       fails to load this page keeps working, it just loses the chrome. -->
+  <link rel="stylesheet" href="https://openric.org/assets/shell/v1.css" />
+  <script defer src="https://openric.org/assets/shell/v1.js"
+          data-product="Graph Explorer" data-theme="dark" data-footer="false"></script>
   <style>
     :root {
       --fg: #e5e7eb; --muted: #9ca3af; --bg: #111827; --panel: #0f172a;
@@ -111,8 +119,10 @@
   <script src="https://unpkg.com/@openric/viewer@0.1/dist/openric-viewer.umd.js"></script>
 </head>
 <body>
+  <!-- Branding moved to the shared OpenRiC shell (injected above this by
+       openric.org/assets/shell/v1.js). What remains here is the control bar,
+       which is this surface's own concern. -->
   <header>
-    <h1><a href="https://openric.org">OpenRiC</a> · Viewer demo</h1>
     <label>Server
       <select id="server">
         <option value="https://ric.theahg.co.za/api/ric/v1">Reference API (ric.theahg.co.za)</option>
