@@ -1,6 +1,6 @@
 {
   "name": "@openric/viewer",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Standalone 2D/3D graph viewer for OpenRiC-conformant servers. Implementation-neutral — drives any server that implements the OpenRiC Viewing API.",
   "keywords": [
     "openric",
@@ -54,9 +54,15 @@
     "three-spritetext": "^1.8.0"
   },
   "peerDependenciesMeta": {
-    "3d-force-graph": { "optional": true },
-    "three": { "optional": true },
-    "three-spritetext": { "optional": true }
+    "3d-force-graph": {
+      "optional": true
+    },
+    "three": {
+      "optional": true
+    },
+    "three-spritetext": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "3d-force-graph": "^1.73.3",
