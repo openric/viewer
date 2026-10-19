@@ -134,6 +134,34 @@
     .legend .item { display: inline-flex; align-items: center; gap: 0.35rem; }
     .legend .swatch { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
     .legend .formal { color: #6b7280; font-size: 0.92em; }
+    /* Details panel: a node or a relationship, opened in place - no graph reload. */
+    .panel {
+      position: fixed; right: 1rem; bottom: 1rem; width: min(24rem, calc(100vw - 2rem));
+      max-height: min(70vh, 36rem); overflow: auto; z-index: 40;
+      background: var(--panel); color: var(--fg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.9rem 1rem 1rem; box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+      font-size: 0.85rem; line-height: 1.45;
+    }
+    .panel h2 { font-size: 1rem; margin: 0 2rem 0.35rem 0; word-break: break-word; }
+    .panel .close { position: absolute; top: 0.5rem; right: 0.5rem; background: none; border: 1px solid var(--border); color: var(--fg); border-radius: 4px; cursor: pointer; padding: 0.1rem 0.45rem; }
+    .panel .chip { display: inline-block; padding: 0.05rem 0.5rem; border-radius: 999px; font-size: 0.72rem; color: #fff; }
+    .panel .formal { color: var(--muted); font-size: 0.78rem; margin-left: 0.35rem; }
+    .panel dl { display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.7rem; margin: 0.6rem 0; }
+    .panel dt { color: var(--muted); font-size: 0.78rem; }
+    .panel dd { margin: 0; word-break: break-word; }
+    .panel h3 { font-size: 0.82rem; color: var(--muted); margin: 0.8rem 0 0.3rem; font-weight: 600; }
+    .panel ul { list-style: none; margin: 0; padding: 0; }
+    .panel li { margin: 0.15rem 0; }
+    .panel .rel-label { color: var(--muted); }
+    .panel button.link { background: none; border: none; color: #93c5fd; cursor: pointer; padding: 0; font: inherit; text-align: left; text-decoration: underline; }
+    .panel .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.8rem; }
+    .panel .actions button, .panel .actions a { background: var(--accent); color: #fff; border: none; border-radius: 4px; padding: 0.35rem 0.7rem; cursor: pointer; font: inherit; text-decoration: none; }
+    .panel .actions a.secondary { background: none; border: 1px solid var(--border); color: var(--fg); }
+    .panel details { margin-top: 0.6rem; }
+    .panel summary { cursor: pointer; color: var(--muted); }
+    .panel code { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.78rem; word-break: break-all; }
+    .panel .demo { margin-top: 0.7rem; padding: 0.2rem 0.5rem; border-left: 3px solid #d97706; color: #fde68a; font-size: 0.78rem; }
+    .panel .note { color: var(--muted); font-style: italic; }
 
     .disclaimer {
       background: #1f2937; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
@@ -168,7 +196,7 @@
   <script src="https://unpkg.com/3d-force-graph@1.73.3/dist/3d-force-graph.min.js"></script>
 
   <!-- The viewer itself, from the published npm package -->
-  <script src="https://unpkg.com/@openric/viewer@0.1/dist/openric-viewer.umd.js"></script>
+  <script src="https://unpkg.com/@openric/viewer@0.4/dist/openric-viewer.umd.js"></script>
 </head>
 <body>
   <!-- Branding moved to the shared OpenRiC shell (injected above this by
@@ -231,9 +259,9 @@
       <div class="help-item"><strong>Server</strong> — pick the <em>Reference API</em> (the live reference implementation, on a demonstration dataset), <em>Static fixtures</em> (service-worker replays the OpenRiC conformance pack — proves the viewer is implementation-neutral), or <em>Custom URL</em> for any third-party OpenRiC-conformant server.</div>
       <div class="help-item"><strong>Start</strong> — path of the root entity to draw. The dropdown lists a few examples; type any path and hit <kbd>Enter</kbd>. Shape: <code>/informationobject/&lt;slug&gt;</code>, <code>/actor/&lt;slug&gt;</code>, <code>/place/&lt;id&gt;</code>, <code>/default/recordset/&lt;id&gt;</code>, etc.</div>
       <div class="help-item"><strong>Mode</strong> — <em>2D</em> (cytoscape force-directed, fast) or <em>3D</em> (WebGL-based, draggable camera). Switch any time and hit <kbd>Load</kbd>.</div>
-      <div class="help-item"><strong>Hover</strong> a node to see its full identifier, RiC-O type (<code>rico:*</code>), and every property the server returns. Hover an edge (if available) for its predicate.</div>
-      <div class="help-item"><strong>Click</strong> a node to drill into its subgraph — the Start field updates and the graph reloads around the new root.</div>
-      <div class="help-item"><strong>3D controls:</strong> left-drag to orbit, right-drag to pan, scroll to zoom. Click-to-drill also orbits the camera to the selected node.</div>
+      <div class="help-item"><strong>Hover</strong> a node to see its full identifier, RiC-O type (<code>rico:*</code>), and every property the server returns.</div>
+      <div class="help-item"><strong>Click</strong> a node to open its details - description, identifiers and relationships - without leaving the graph. <em>Explore from here</em> redraws the graph around it. <strong>Click a line</strong> to see why two things are connected.</div>
+      <div class="help-item"><strong>3D controls:</strong> left-drag to orbit, right-drag to pan, scroll to zoom. Clicking a node also orbits the camera to it.</div>
     </div>
   </div>
   <div class="disclaimer">
@@ -242,6 +270,7 @@
   </div>
   <div id="viewer"></div>
   <div class="node-tooltip" id="node-tooltip" role="tooltip"></div>
+  <aside class="panel" id="panel" aria-labelledby="panel-title" hidden></aside>
 
   <script>
     const { fetchSubgraph, init2D, init3D, getColour } = window.OpenricViewer;
@@ -354,7 +383,7 @@
         ${extraDl}
         ${atomLink}
         ${demoNote()}
-        <div class="tt-hint">Click to drill into this node's subgraph</div>
+        <div class="tt-hint">Click for details</div>
       `;
     }
 
@@ -475,7 +504,7 @@
       }
     }
 
-    function handleNodeClick(node) {
+    function exploreFrom(node) {
       if (!node || !node.id) return;
       let path = node.id;
       try { if (path.startsWith('http')) path = new URL(path).pathname; } catch {}
@@ -484,7 +513,180 @@
       trail.push({ path, label });
       startInput.value = path;
       hideTooltip();
+      closePanel();
       load({ keepTrail: true });
+    }
+
+    // --- Details panel -----------------------------------------------------
+    // Clicking opens a node's or a relationship's details in place. The graph
+    // is only redrawn when the reader asks for it ("Explore from here").
+    const panelEl = document.getElementById('panel');
+    let panelReturnFocus = null;
+
+    function shortType(type) {
+      return String(type || '').split('#').pop().split('/').pop().split(':').pop();
+    }
+    function nodeById(id) {
+      return (lastGraph.nodes || []).find(n => n.id === id) || null;
+    }
+    function closePanel() {
+      if (panelEl.hidden) return;
+      panelEl.hidden = true;
+      panelEl.innerHTML = '';
+      if (panelReturnFocus && document.contains(panelReturnFocus)) panelReturnFocus.focus();
+    }
+    function showPanel(html) {
+      if (panelEl.hidden) panelReturnFocus = document.activeElement;
+      panelEl.innerHTML = '<button class="close" type="button" aria-label="Close details">&times;</button>' + html;
+      panelEl.hidden = false;
+      panelEl.querySelector('.close').addEventListener('click', closePanel);
+      const h = panelEl.querySelector('h2');
+      if (h) { h.tabIndex = -1; h.focus(); }
+    }
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
+
+    // Where a node's own record lives on the server, from its type and the
+    // slug or numeric id the graph gives it. Null when there is no endpoint.
+    function recordPath(node) {
+      const t = shortType(node.type);
+      const slug = (node.atomUrl || '').replace(/^\//, '');
+      const num = node.atomId || (String(node.id).match(/\/(\d+)$/) || [])[1];
+      if (['RecordSet', 'Record', 'RecordPart'].includes(t) && slug) return '/records/' + encodeURIComponent(slug);
+      if (['Person', 'CorporateBody', 'Family', 'Agent'].includes(t) && slug) return '/agents/' + encodeURIComponent(slug);
+      const byId = { Place: 'places', Activity: 'activities', Instantiation: 'instantiations', Rule: 'rules', Function: 'functions' };
+      if (byId[t] && num) return '/' + byId[t] + '/' + num;
+      return null;
+    }
+    function textOf(v) {
+      if (v == null) return '';
+      if (Array.isArray(v)) return v.map(textOf).filter(Boolean).join('; ');
+      if (typeof v === 'object') return textOf(v['@value'] ?? v['rico:name'] ?? v['rico:expressedDate'] ?? '');
+      return String(v);
+    }
+    function datesOf(rec) {
+      if (rec['rico:date']) return textOf(rec['rico:date']);
+      const ranges = [].concat(rec['openricx:hasDateRangeSet'] || []);
+      return ranges.map(r => textOf(r['rico:expressedDate']) || [textOf(r['rico:beginningDate']), textOf(r['rico:endDate'])].filter(Boolean).join(' to ')).filter(Boolean).join('; ');
+    }
+
+    function relationsHtml(node) {
+      const rels = (lastGraph.edges || []).filter(e => e.source === node.id || e.target === node.id);
+      if (!rels.length) return '';
+      const items = rels.slice(0, 40).map((e) => {
+        const outgoing = e.source === node.id;
+        const other = nodeById(outgoing ? e.target : e.source);
+        const name = escapeHtml((other && (other.label || other.name)) || (outgoing ? e.target : e.source));
+        const rel = escapeHtml(e.label || shortType(e.predicate) || 'related to');
+        const idx = lastGraph.edges.indexOf(e);
+        const otherBtn = `<button class="link" type="button" data-node="${escapeHtml(outgoing ? e.target : e.source)}">${name}</button>`;
+        const relBtn = `<button class="link" type="button" data-edge="${idx}" title="Why is this connected?">${rel}</button>`;
+        return outgoing
+          ? `<li><span class="rel-label">this</span> ${relBtn} ${otherBtn}</li>`
+          : `<li>${otherBtn} ${relBtn} <span class="rel-label">this</span></li>`;
+      }).join('');
+      const more = rels.length > 40 ? `<p class="note">and ${rels.length - 40} more</p>` : '';
+      return `<h3>Relationships on this graph (${rels.length})</h3><ul>${items}</ul>${more}`;
+    }
+
+    function wirePanelLinks() {
+      panelEl.querySelectorAll('[data-node]').forEach(b => b.addEventListener('click', () => {
+        const n = nodeById(b.getAttribute('data-node')); if (n) openNodePanel(n);
+      }));
+      panelEl.querySelectorAll('[data-edge]').forEach(b => b.addEventListener('click', () => {
+        const e = lastGraph.edges[+b.getAttribute('data-edge')]; if (e) openEdgePanel(e);
+      }));
+    }
+
+    async function openNodePanel(nodeIn) {
+      hideTooltip();
+      const node = nodeById(nodeIn.id) || nodeIn;
+      const t = shortType(node.type);
+      const head = `<h2 id="panel-title">${escapeHtml(node.label || node.name || 'Unknown')}</h2>
+        <span class="chip" style="background:${getColour(node.type)}">${escapeHtml(PLAIN_TYPE[t] || t || 'Unknown')}</span><span class="formal">rico:${escapeHtml(t)}</span>`;
+      const actions = `<div class="actions"><button type="button" id="panel-explore">Explore from here</button><span id="panel-api"></span></div>`;
+      const demo = demoNote() ? '<div class="demo">Demonstration data - not an institution\'s catalogue record.</div>' : '';
+      showPanel(head + '<div id="panel-body"><p class="note">Loading details…</p></div>' + relationsHtml(node) + actions + demo);
+      panelEl.querySelector('#panel-explore').addEventListener('click', () => exploreFrom(node));
+      wirePanelLinks();
+
+      const body = panelEl.querySelector('#panel-body');
+      const path = recordPath(node);
+      if (!path || serverSel.value === 'static') { body.innerHTML = `<dl><dt>Identifier</dt><dd><code>${escapeHtml(node.id)}</code></dd></dl>`; return; }
+      const url = currentServer().replace(/\/$/, '') + path;
+      try {
+        const r = await fetch(url, { headers: { Accept: 'application/ld+json, application/json' } });
+        if (!r.ok) throw new Error(r.status);
+        const rec = await r.json();
+        if (panelEl.hidden || !panelEl.contains(body)) return;   // the reader moved on
+        const rows = [
+          ['Identifier', textOf(rec['rico:identifier'])],
+          ['Dates', datesOf(rec)],
+          ['Description', textOf(rec['rico:scopeAndContent'] || rec['rico:history'] || rec['rico:generalDescription'] || rec['openricx:description'])],
+        ].filter(([, v]) => v);
+        body.innerHTML = (rows.length ? '<dl>' + rows.map(([k, v]) => `<dt>${k}</dt><dd>${escapeHtml(v.length > 700 ? v.slice(0, 700) + '…' : v)}</dd>`).join('') + '</dl>' : '<p class="note">The server holds no description for this entity.</p>')
+          + `<details><summary>Identifier on the server</summary><code>${escapeHtml(rec['@id'] || node.id)}</code></details>`;
+        const api = panelEl.querySelector('#panel-api');
+        if (api) api.innerHTML = `<a class="secondary" href="${escapeHtml(url)}" target="_blank" rel="noopener">Open the record (JSON-LD) ↗</a>`;
+      } catch (e) {
+        body.innerHTML = `<p class="note">Details could not be read from the server just now.</p><dl><dt>Identifier</dt><dd><code>${escapeHtml(node.id)}</code></dd></dl>`;
+      }
+    }
+
+    // Plain-language readings of the commonest RiC-O relations, read from the
+    // edge's source to its target. Anything else falls back to the server's label.
+    const WHY = {
+      hasOrHadSubject: 'is about',
+      isOrWasSubjectOf: 'is a subject of',
+      hasCreator: 'was created by',
+      isCreatorOf: 'created',
+      hasOrHadHolder: 'is or was held by',
+      isOrWasHolderOf: 'holds or held',
+      isOrWasIncludedIn: 'is part of',
+      includesOrIncluded: 'contains',
+      hasOrHadInstantiation: 'has a physical or digital copy',
+      isOrWasInstantiationOf: 'is a physical or digital copy of',
+      hasOrganicProvenance: 'was produced in the course of the work of',
+      isAssociatedWithPlace: 'is connected with the place',
+      hasOrHadLocation: 'is or was located at',
+      hasContentOfType: 'contains material of the kind',
+      isOrWasRegulatedBy: 'is or was governed by',
+      resultsOrResultedFrom: 'resulted from',
+      hasOrHadParticipant: 'had as a participant',
+    };
+
+    function openEdgePanel(edge) {
+      if (!edge) return;
+      hideTooltip();
+      const src = nodeById(edge.source), tgt = nodeById(edge.target);
+      const sName = escapeHtml((src && (src.label || src.name)) || edge.source);
+      const tName = escapeHtml((tgt && (tgt.label || tgt.name)) || edge.target);
+      const local = shortType(edge.predicate);
+      const reading = escapeHtml(WHY[local] || edge.label || 'is related to');
+      const pred = String(edge.predicate || '');
+      const iri = pred.startsWith('rico:') ? 'https://www.ica.org/standards/RiC/ontology#' + pred.slice(5) : pred;
+      showPanel(`<h2 id="panel-title">Why is this connected?</h2>
+        <p><button class="link" type="button" data-node="${escapeHtml(edge.source)}">${sName}</button> ${reading} <button class="link" type="button" data-node="${escapeHtml(edge.target)}">${tName}</button>.</p>
+        <p class="note">The server records this relationship; the graph draws it as a line between the two.</p>
+        <details><summary>Formal relation</summary>
+          <dl><dt>RiC-O property</dt><dd><code>${escapeHtml(pred || 'not given')}</code></dd>
+          ${iri.startsWith('http') ? `<dt>Definition</dt><dd><a href="${escapeHtml(iri)}" target="_blank" rel="noopener">${escapeHtml(iri)}</a></dd>` : ''}
+          <dt>From</dt><dd><code>${escapeHtml(edge.source)}</code></dd><dt>To</dt><dd><code>${escapeHtml(edge.target)}</code></dd></dl>
+        </details>`);
+      wirePanelLinks();
+    }
+
+    function attachEdgeClickForCy(cy) {
+      cy.on('tap', 'edge', (evt) => {
+        const idx = +String(evt.target.id()).replace(/^e/, '');
+        openEdgePanel(lastGraph.edges[idx]);
+      });
+    }
+    function attachEdgeClickForForceGraph(fg) {
+      fg.onLinkClick((link) => {
+        const s = link.source && link.source.id !== undefined ? link.source.id : link.source;
+        const t = link.target && link.target.id !== undefined ? link.target.id : link.target;
+        openEdgePanel((lastGraph.edges || []).find(e => e.source === s && e.target === t && (e.label || e.predicate || '') === (link.label || '')));
+      });
     }
 
     function attachHoverForCy(cy) {
@@ -541,13 +743,13 @@
         renderLegend(graph);
         renderTrail();
 
-        const opts = { onNodeClick: handleNodeClick };
+        const opts = { onNodeClick: openNodePanel };
         if (modeSel.value === '3d') {
           currentInstance = init3D(viewerEl, graph, opts);
-          if (currentInstance) attachHoverForForceGraph(currentInstance);
+          if (currentInstance) { attachHoverForForceGraph(currentInstance); attachEdgeClickForForceGraph(currentInstance); }
         } else {
           currentInstance = init2D(viewerEl, graph, opts);
-          if (currentInstance) attachHoverForCy(currentInstance);
+          if (currentInstance) { attachHoverForCy(currentInstance); attachEdgeClickForCy(currentInstance); }
         }
         if (!currentInstance) {
           viewerEl.innerHTML = `<div class="error-panel">Viewer failed to initialise — check the browser console for details.</div>`;
