@@ -862,7 +862,15 @@
       localStorage.setItem(HELP_KEY, '1');
     });
 
-    load();
+    // A record page: ?start=/informationobject/<slug> (or /actor/, /place/<id>, ...)
+    // opens that entity's graph with its details panel already showing. This is
+    // where an OpenRiC record IRI sends a browser.
+    const startParam = new URLSearchParams(location.search).get('start');
+    const validStart = startParam && /^\/(informationobject|actor|repository|place|activity|rule|instantiation|function)\/[A-Za-z0-9_-]+$/.test(startParam);
+    if (validStart) startInput.value = startParam;
+    load().then(() => {
+      if (validStart && lastGraph.nodes && lastGraph.nodes.length) openNodePanel(lastGraph.nodes[0]);
+    });
   </script>
 </body>
 </html>
