@@ -1,9 +1,9 @@
 # @openric/viewer
 
-Standalone 2D/3D graph viewer for **[OpenRiC](https://openric.org)**-conformant servers. Implementation-neutral — drives any server that implements the OpenRiC Viewing API, not just the Heratio reference implementation.
+Standalone 2D/3D graph viewer for **[OpenRiC](https://openric.org)**-conformant servers. Implementation-neutral: it drives any server that implements the OpenRiC Viewing API, not just the reference implementation.
 
 - **Spec:** [openric.org](https://openric.org)
-- **Reference implementation:** [github.com/ArchiveHeritageGroup/heratio](https://github.com/ArchiveHeritageGroup/heratio)
+- **Reference implementation:** [github.com/openric/service](https://github.com/openric/service), running at [ric.theahg.co.za](https://ric.theahg.co.za)
 - **This repo:** [github.com/openric/viewer](https://github.com/openric/viewer)
 
 ## Install
@@ -52,10 +52,10 @@ handle.unmount();
 
 The [live demo](https://viewer.openric.org) points the same viewer at two different servers:
 
-1. **Heratio** — the reference implementation
-2. **Static fixture backend** — serves the OpenRiC [conformance fixture pack](https://github.com/openric/spec/tree/main/fixtures) as if it were a live API
+1. **The reference service** at [ric.theahg.co.za](https://ric.theahg.co.za), the OpenRiC reference implementation
+2. **Static fixture backend**, which serves the OpenRiC [conformance fixture pack](https://github.com/openric/spec/tree/main/fixtures) as if it were a live API
 
-If both render correctly, the viewer depends only on the OpenRiC spec contract — not on any Heratio-specific behaviour.
+If both render correctly, the viewer depends only on the OpenRiC spec contract, not on any one server's behaviour.
 
 Run the static fixture backend locally:
 
@@ -85,4 +85,4 @@ git push --follow-tags
 
 ## Licence
 
-**AGPL-3.0-or-later** — same as the reference implementation. The OpenRiC specification itself is CC-BY 4.0; this viewer is a separate work.
+**AGPL-3.0-or-later**, the same as the reference implementation. The OpenRiC specification itself is CC-BY 4.0; this viewer is a separate work.
